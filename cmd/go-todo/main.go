@@ -4,7 +4,9 @@ import (
 	"goTodo/internal/config"
 	"goTodo/internal/handler"
 	"goTodo/internal/lib/logger/sl"
-	"goTodo/internal/storage/sqlite"
+	"goTodo/internal/repository"
+	"goTodo/internal/repository/sqlite"
+	"goTodo/internal/service"
 
 	"log/slog"
 	"net/http"
@@ -31,11 +33,11 @@ func main() {
 		log.Error("failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = storage
 
-	// router
-	handler := new(handler.Handler)
-	router := handler.InitRoutes()
+	// rest
+	repos := repository.NewRepository(storage.DB)
+	services := service.NewService(repos)
+	handlers := handler.NewHandler(services)
 
 	//	router.Use(middleware.RequestID)
 
@@ -44,7 +46,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         cfg.Address,
-		Handler:      router,
+		Handler:      handlers.InitRoutes(),
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
