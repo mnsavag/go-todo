@@ -10,15 +10,21 @@ import (
 
 func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 	type request struct {
-		Name     string `json:"name"`
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Name     string `json:"name" validate:"required"`
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
 	}
 
 	req := &request{}
 
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-		server.HttpErr(w, r, http.StatusBadRequest, err)
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
+
+	err := server.RequestBodyValidate(req)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
 
@@ -28,19 +34,45 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		Password: req.Password,
 	}
 
+	// Добавить проверку что user уже есть в базе
+
 	id, err := h.Services.Authorization.CreateUser(user)
 	if err != nil {
-		server.HttpErr(w, r, http.StatusInternalServerError, err)
+		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
 		return
 	}
 
-	server.Respond(w, r, http.StatusCreated, id)
-
-	// валидация
-	// унифицировать ответ сервера в успешном случае
-	// убрать константу op, так как она только для разработки
+	server.Respond(w, r, http.StatusCreated, map[string]interface{}{
+		"id": id,
+	})
 }
 
 func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
 
+	req := &request{}
+
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
+
+	err := server.RequestBodyValidate(req)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
+
+	token, err := h.Services.Authorization.GenerateToken(req.Username, req.Password)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
+		return
+	}
+
+	server.Respond(w, r, http.StatusOK, map[string]interface{}{
+		"token": token,
+	})
 }

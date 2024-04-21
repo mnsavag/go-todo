@@ -16,25 +16,45 @@ func NewAuthSqlite(db *sql.DB) *AuthSqlite {
 	return &AuthSqlite{db: db}
 }
 
-func (s *AuthSqlite) CreateUser(user model.User) (int64, error) {
-	const op = "repository.sqlite.CreateUser"
+func (r *AuthSqlite) CreateUser(user model.User) (int64, error) {
+	query := fmt.Sprintf(
+		"INSERT INTO %s (name, username, password_hash) VALUES ('%s', '%s', '%s')",
+		cmnStorage.UsersTable, user.Name, user.Username, user.Password,
+	)
 
-	query := fmt.Sprintf("INSERT INTO %s (name, username, password_hash) VALUES (?, ?, ?)", cmnStorage.UsersTable)
-
-	stmt, err := s.db.Prepare(query)
+	res, err := r.db.Exec(query)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	res, err := stmt.Exec(user.Name, user.Username, user.Password)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%w", err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("%s: failed to get last insert id: %w", op, err)
+		return 0, fmt.Errorf("failed to get last insert id: %w", err)
 	}
 
 	return id, nil
 }
+
+func (r *AuthSqlite) GetRegisteredUser(username, password string) (model.User, error) {
+	query := fmt.Sprintf(
+		"SELECT id FROM %s WHERE username='%s' AND password_hash='%s'",
+		cmnStorage.UsersTable, username, password,
+	)
+	var user model.User
+
+	err := r.db.QueryRow(query).Scan(&user.Id)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+/*
+	func (r*) GetUser
+	err = stmt.QueryRow(username, password).Scan(&user)
+	// err is not "user not found". Need handle in handler.
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return user, err
+	}
+*/
