@@ -25,7 +25,7 @@ func (h *Handler) InitRoutes() chi.Router {
 	})
 
 	router.Route("/api", func(api chi.Router) {
-
+		api.Use(h.userIdentity)
 		api.Route("/lists", func(lists chi.Router) {
 			lists.Post("/", h.createList)
 			lists.Get("/", h.getAllLists)
