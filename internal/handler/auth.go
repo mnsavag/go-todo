@@ -4,36 +4,26 @@ import (
 	"goTodo/internal/lib/server"
 	"goTodo/internal/model"
 
-	"encoding/json"
 	"net/http"
 )
 
 func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
-	type request struct {
+	type dto struct {
 		Name     string `json:"name" validate:"required"`
 		Username string `json:"username" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
-
-	req := &request{}
-
-	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
-		return
-	}
-
-	err := server.RequestBodyValidate(req)
-	if err != nil {
+	reqBody := &dto{}
+	if err := server.RequestValidate(w, r, reqBody); err != nil {
 		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
 
 	user := model.User{
-		Name:     req.Name,
-		Username: req.Username,
-		Password: req.Password,
+		Name:     reqBody.Name,
+		Username: reqBody.Username,
+		Password: reqBody.Password,
 	}
-
 	// Добавить проверку что user уже есть в базе
 
 	id, err := h.Services.Authorization.CreateUser(user)
@@ -48,25 +38,17 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
-	type request struct {
+	type dto struct {
 		Username string `json:"username" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
-
-	req := &request{}
-
-	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+	reqBody := &dto{}
+	if err := server.RequestValidate(w, r, reqBody); err != nil {
 		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
 
-	err := server.RequestBodyValidate(req)
-	if err != nil {
-		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
-		return
-	}
-
-	token, err := h.Services.Authorization.GenerateToken(req.Username, req.Password)
+	token, err := h.Services.Authorization.GenerateToken(reqBody.Username, reqBody.Password)
 	if err != nil {
 		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
 		return

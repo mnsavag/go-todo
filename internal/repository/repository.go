@@ -13,6 +13,7 @@ type Authorization interface {
 }
 
 type TodoList interface {
+	Create(userId int64, list model.TodoList) (int64, error)
 }
 
 type TodoItem interface {
@@ -27,5 +28,6 @@ type Repository struct {
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
 		Authorization: sqlite.NewAuthSqlite(db),
+		TodoList:      sqlite.NewTodoListSqlite(db),
 	}
 }

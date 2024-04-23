@@ -21,6 +21,18 @@ func Respond(w http.ResponseWriter, r *http.Request, code int, data interface{})
 	}
 }
 
+func RequestValidate(w http.ResponseWriter, r *http.Request, dto interface{}) error {
+	/* decode json into dto and validate body according to dto*/
+	if err := json.NewDecoder(r.Body).Decode(dto); err != nil {
+		return err
+	}
+	err := RequestBodyValidate(dto)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func RequestBodyValidate(requestBody interface{}) error {
 	validate := validator.New()
 	if err := validate.Struct(requestBody); err != nil {
