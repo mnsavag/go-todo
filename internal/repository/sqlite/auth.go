@@ -49,12 +49,3 @@ func (r *AuthSqlite) GetRegisteredUser(username, password string) (model.User, e
 
 	return user, nil
 }
-
-/*
-	func (r*) GetUser
-	err = stmt.QueryRow(username, password).Scan(&user)
-	// err is not "user not found". Need handle in handler.
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return user, err
-	}
-*/

@@ -3,7 +3,11 @@ package handler
 import (
 	"goTodo/internal/lib/server"
 	"goTodo/internal/model"
+
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
@@ -12,7 +16,7 @@ func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description" validate:"required"`
 	}
 	reqBody := &dto{}
-	if err := server.RequestValidate(w, r, reqBody); err != nil {
+	if err := server.ParseReqToDto(w, r, reqBody); err != nil {
 		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
@@ -24,7 +28,7 @@ func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
 
 	userId, err := getUserId(r)
 	if err != nil {
-		server.HttpErrResponse(w, r, http.StatusBadRequest, "user id not found", "")
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
 
@@ -40,11 +44,47 @@ func (h *Handler) createList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getAllLists(w http.ResponseWriter, r *http.Request) {
+	userId, err := getUserId(r)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
 
+	lists, err := h.Services.TodoList.GetAll(userId)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
+		return
+	}
+
+	server.Respond(w, r, http.StatusOK, map[string]interface{}{
+		"data": lists,
+	})
 }
 
 func (h *Handler) getListById(w http.ResponseWriter, r *http.Request) {
+	userId, err := getUserId(r)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
 
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, "invalid id param", "")
+		return
+	}
+
+	list, err := h.Services.TodoList.GetById(userId, id)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
+		return
+	}
+
+	if list == (model.TodoList{}) {
+		server.Respond(w, r, http.StatusOK, map[string]interface{}{})
+		return
+	}
+	server.Respond(w, r, http.StatusOK, list)
 }
 
 func (h *Handler) updateList(w http.ResponseWriter, r *http.Request) {

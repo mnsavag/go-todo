@@ -14,6 +14,8 @@ type Authorization interface {
 
 type TodoList interface {
 	Create(userId int64, list model.TodoList) (int64, error)
+	GetAll(userId int64) ([]model.TodoList, error)
+	GetById(userId, listId int64) (model.TodoList, error)
 }
 
 type TodoItem interface {

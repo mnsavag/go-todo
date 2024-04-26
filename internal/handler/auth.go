@@ -14,7 +14,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password" validate:"required"`
 	}
 	reqBody := &dto{}
-	if err := server.RequestValidate(w, r, reqBody); err != nil {
+	if err := server.ParseReqToDto(w, r, reqBody); err != nil {
 		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}
@@ -43,7 +43,7 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password" validate:"required"`
 	}
 	reqBody := &dto{}
-	if err := server.RequestValidate(w, r, reqBody); err != nil {
+	if err := server.ParseReqToDto(w, r, reqBody); err != nil {
 		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
 		return
 	}

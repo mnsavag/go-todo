@@ -21,7 +21,7 @@ func Respond(w http.ResponseWriter, r *http.Request, code int, data interface{})
 	}
 }
 
-func RequestValidate(w http.ResponseWriter, r *http.Request, dto interface{}) error {
+func ParseReqToDto(w http.ResponseWriter, r *http.Request, dto interface{}) error {
 	/* decode json into dto and validate body according to dto*/
 	if err := json.NewDecoder(r.Body).Decode(dto); err != nil {
 		return err
