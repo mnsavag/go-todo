@@ -109,18 +109,15 @@ func (r *TodoListSqlite) Delete(userId, listId int64) error {
 func (r *TodoListSqlite) Update(userId, listId int64, input model.UpdateListInput) error {
 	setFields := make([]string, 0)
 	setValues := make([]string, 0)
-	argId := 1
 
 	if input.Title != nil {
 		setFields = append(setFields, "title")
 		setValues = append(setValues, "'"+*input.Title+"'")
-		argId++
 	}
 
 	if input.Description != nil {
 		setFields = append(setFields, "description")
 		setValues = append(setValues, "'"+*input.Description+"'")
-		argId++
 	}
 
 	setFieldsQuery := strings.Join(setFields, ", ")
