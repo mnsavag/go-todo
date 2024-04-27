@@ -52,5 +52,6 @@ func GetInitDBQueries() []string {
 			FOREIGN KEY (item_id) REFERENCES todo_items ON DELETE CASCADE,
 			FOREIGN KEY (list_id) REFERENCES todo_lists ON DELETE CASCADE
 		);`,
+		`PRAGMA foreign_keys = ON;`,
 	}
 }

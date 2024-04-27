@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"goTodo/internal/lib/server"
 	"goTodo/internal/model"
 
@@ -88,9 +89,50 @@ func (h *Handler) getListById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateList(w http.ResponseWriter, r *http.Request) {
+	var todoInput model.UpdateListInput
 
+	if err := json.NewDecoder(r.Body).Decode(&todoInput); err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+	}
+
+	userId, err := getUserId(r)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, "invalid id param", "")
+		return
+	}
+
+	err = h.Services.TodoList.Update(userId, id, todoInput)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
+
+	server.Respond(w, r, http.StatusOK, map[string]interface{}{})
 }
 
 func (h *Handler) deleteList(w http.ResponseWriter, r *http.Request) {
+	userId, err := getUserId(r)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, err.Error(), "")
+		return
+	}
 
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusBadRequest, "invalid id param", "")
+		return
+	}
+
+	err = h.Services.TodoList.Delete(userId, id)
+	if err != nil {
+		server.HttpErrResponse(w, r, http.StatusInternalServerError, err.Error(), "")
+		return
+	}
+
+	server.Respond(w, r, http.StatusOK, map[string]interface{}{})
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goTodo/internal/model"
 	cmnStorage "goTodo/internal/repository/cmn-storage"
+	"strings"
 )
 
 type TodoListSqlite struct {
@@ -79,7 +80,7 @@ func (r *TodoListSqlite) GetById(userId, listId int64) (model.TodoList, error) {
 	var list model.TodoList
 	query := fmt.Sprintf(
 		`SELECT tl.id, tl.title, tl.description FROM %s tl 
-		INNER JOIN %s ul ON tl.id=ul.list_id WHERE ul.user_id = ? AND ul.list_id = ?`,
+		INNER JOIN %s ul ON tl.id = ul.list_id WHERE ul.user_id = ? AND ul.list_id = ?`,
 		cmnStorage.TodoListsTable, cmnStorage.UsersListsTable,
 	)
 
@@ -89,4 +90,52 @@ func (r *TodoListSqlite) GetById(userId, listId int64) (model.TodoList, error) {
 	}
 
 	return list, nil
+}
+
+func (r *TodoListSqlite) Delete(userId, listId int64) error {
+	query := fmt.Sprintf(
+		`DELETE FROM %s 
+		WHERE id IN (
+			SELECT tl.id FROM %s tl INNER JOIN %s ul ON tl.id = ul.list_id WHERE ul.user_id = ? AND ul.list_id = ?
+		)`,
+		cmnStorage.TodoListsTable, cmnStorage.TodoListsTable, cmnStorage.UsersListsTable,
+	)
+
+	_, err := r.db.Exec(query, userId, listId)
+
+	return err
+}
+
+func (r *TodoListSqlite) Update(userId, listId int64, input model.UpdateListInput) error {
+	setFields := make([]string, 0)
+	setValues := make([]string, 0)
+	argId := 1
+
+	if input.Title != nil {
+		setFields = append(setFields, "title")
+		setValues = append(setValues, "'"+*input.Title+"'")
+		argId++
+	}
+
+	if input.Description != nil {
+		setFields = append(setFields, "description")
+		setValues = append(setValues, "'"+*input.Description+"'")
+		argId++
+	}
+
+	setFieldsQuery := strings.Join(setFields, ", ")
+	setFieldsQuery = "(" + setFieldsQuery + ")"
+	setValuesQuery := strings.Join(setValues, ", ")
+	setValuesQuery = "(" + setValuesQuery + ")"
+
+	query := fmt.Sprintf(
+		`UPDATE %s SET %s = %s 
+		WHERE id IN (
+			SELECT tl.id FROM %s tl INNER JOIN %s ul ON tl.id = ul.list_id WHERE ul.user_id = ? AND ul.list_id = ?
+		)`,
+		cmnStorage.TodoListsTable, setFieldsQuery, setValuesQuery, cmnStorage.TodoListsTable, cmnStorage.UsersListsTable,
+	)
+	fmt.Println(query)
+	_, err := r.db.Exec(query, userId, listId)
+	return err
 }
