@@ -132,7 +132,7 @@ func (r *TodoListSqlite) Update(userId, listId int64, input model.UpdateListInpu
 		)`,
 		cmnStorage.TodoListsTable, setFieldsQuery, setValuesQuery, cmnStorage.TodoListsTable, cmnStorage.UsersListsTable,
 	)
-	fmt.Println(query)
+
 	_, err := r.db.Exec(query, userId, listId)
 	return err
 }
