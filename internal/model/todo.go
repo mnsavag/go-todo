@@ -11,7 +11,7 @@ type TodoList struct {
 type TodoItem struct {
 	Id          int64  `json:"id"`
 	Title       string `json:"title"`
-	Description int    `json:"description"`
+	Description string `json:"description"`
 	Done        bool   `json:"done"`
 }
 
